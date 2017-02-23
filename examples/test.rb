@@ -1,9 +1,38 @@
-# author  driip
-# date    160227
-
+require 'tk'
+require 'tkextlib/tile'
 require 'net/http'
 require 'uri'
 require 'active_support/core_ext/object/try'
+
+Tk::TK_PATCHLEVEL
+
+root = TkRoot.new {title "알송 가사 자막 변환 프로그램"}
+content = Tk::Tile::Frame.new(root) {padding "3 3 12 12"}.grid( :sticky => 'nsew')
+TkGrid.columnconfigure root, 0, :weight => 1; TkGrid.rowconfigure root, 0, :weight => 1
+
+$song_title = TkVariable.new; $song_artist = TkVariable.new; $result = TkVariable.new
+
+#f = Tk::Tile::Entry.new(content) {width 7; textvariable $feet}.grid( :column => 2, :row => 1, :sticky => 'we' )
+t = Tk::Tile::Entry.new(content) {width 20; textvariable $song_title}.grid( :column => 2, :row => 1, :sticky => 'we' )
+a = Tk::Tile::Entry.new(content) {width 20; textvariable $song_artist}.grid( :column => 2, :row => 2, :sticky => 'we' )
+Tk::Tile::Label.new(content) {textvariable $result}.grid( :column => 2, :row => 3, :sticky => 'we');
+Tk::Tile::Button.new(content) {text '자막 추출'; command {calculate}}.grid( :column => 3, :row => 4, :sticky => 'w')
+
+Tk::Tile::Label.new(content) {text '노래 제목'}.grid( :column => 1, :row => 1, :sticky => 'w')
+Tk::Tile::Label.new(content) {text '가수'}.grid( :column => 1, :row => 2, :sticky => 'w')
+
+
+TkWinfo.children(content).each {|w| TkGrid.configure w, :padx => 5, :pady => 5}
+t.focus
+root.bind("Return") {calculate}
+
+def calculate
+  begin
+     $result.value = Alsong.get_lyrics $song_title, $song_artist
+  rescue
+     
+  end
+end
 
 module Alsong
   $alsong_uri = URI.parse 'http://lyrics.alsong.co.kr/alsongwebservice/service1.asmx'
@@ -71,6 +100,10 @@ module Alsong
 #         puts lyric_time_ + " / " + i.to_s
         end
 
+        if title == ""
+        	return "검색 결과가 없습니다."
+        end
+
         open("#{song_title.force_encoding('UTF-8')}.smi", 'w') { |f|
 		f.puts "<SAMI>
 		<HEAD>"
@@ -96,3 +129,6 @@ module Alsong
 #   return res.body
   end
 end
+
+
+Tk.mainloop
